@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from utils.dataset_utils import DenoiseTestDataset, DerainDehazeDataset
+from utils.dataset_utils_CDD import DerainDehazeDataset
 from utils.val_utils import AverageMeter, compute_psnr_ssim
 from utils.image_io import save_image_tensor
 
@@ -43,20 +43,20 @@ def test_Derain_Dehaze(net, dataset, task="derain"):
 
     dataset.set_dataset(task)
     testloader = DataLoader(dataset, batch_size=1, pin_memory=True, shuffle=False, num_workers=0)
-
+    print(len(testloader))
     psnr = AverageMeter()
     ssim = AverageMeter()
 
     with torch.no_grad():
-        for ([degraded_name], degrad_patch, clean_patch) in tqdm(testloader):
+        for ([degraded_name], degradation, degrad_patch, clean_patch) in tqdm(testloader):
             degrad_patch, clean_patch = degrad_patch.cuda(), clean_patch.cuda()
-
+            print(f"Clean patch size: {clean_patch.size()}, Restored size: {degrad_patch.size()}")
             restored = net(x_query=degrad_patch, x_key=degrad_patch)
             temp_psnr, temp_ssim, N = compute_psnr_ssim(restored, clean_patch)
             psnr.update(temp_psnr, N)
             ssim.update(temp_ssim, N)
 
-            save_image_tensor(restored, output_path + degraded_name[0] + '.png')
+            save_image_tensor(restored, output_path + degradation[0] + degraded_name[0] + '.png')
 
         print("PSNR: %.2f, SSIM: %.4f" % (psnr.avg, ssim.avg))
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
                         help='0 for denoise, 1 for derain, 2 for dehaze, 3 for all-in-one')
 
     parser.add_argument('--denoise_path', type=str, default="test/denoise/", help='save path of test noisy images')
-    parser.add_argument('--derain_path', type=str, default="test/derain/", help='save path of test raining images')
+    parser.add_argument('--derain_path', type=str, default="data/CDD-11_test_100/", help='save path of test raining images')
     parser.add_argument('--dehaze_path', type=str, default="test/dehaze/", help='save path of test hazy images')
     parser.add_argument('--output_path', type=str, default="output/", help='output save path')
     parser.add_argument('--ckpt_path', type=str, default="ckpt/", help='checkpoint save path')
@@ -83,8 +83,8 @@ if __name__ == '__main__':
         opt.batch_size = 3
         ckpt_path = opt.ckpt_path + 'Denoise.pth'
     elif opt.mode == 1:
-        opt.batch_size = 1
-        ckpt_path = opt.ckpt_path + 'Derain.pth'
+        opt.batch_size = 8
+        ckpt_path = opt.ckpt_path + 'Denoise/epoch_165.pth'
     elif opt.mode == 2:
         opt.batch_size = 1
         ckpt_path = opt.ckpt_path + 'Dehaze.pth'
@@ -92,7 +92,7 @@ if __name__ == '__main__':
         opt.batch_size = 5
         ckpt_path = opt.ckpt_path + 'All.pth'
 
-    denoise_set = DenoiseTestDataset(opt)
+    # denoise_set = DenoiseTestDataset(opt)
     derain_set = DerainDehazeDataset(opt)
 
     # Make network
@@ -102,28 +102,28 @@ if __name__ == '__main__':
 
     if opt.mode == 0:
         print('Start testing Sigma=15...')
-        test_Denoise(net, denoise_set, sigma=15)
+        # test_Denoise(net, denoise_set, sigma=15)
 
         print('Start testing Sigma=25...')
-        test_Denoise(net, denoise_set, sigma=25)
+        # test_Denoise(net, denoise_set, sigma=25)
 
         print('Start testing Sigma=50...')
-        test_Denoise(net, denoise_set, sigma=50)
+        # test_Denoise(net, denoise_set, sigma=50)
     elif opt.mode == 1:
         print('Start testing rain streak removal...')
-        test_Derain_Dehaze(net, derain_set, task="Rain100L")
+        test_Derain_Dehaze(net, derain_set, task="derain")
     elif opt.mode == 2:
         print('Start testing SOTS...')
         test_Derain_Dehaze(net, derain_set, task="SOTS_outdoor")
     elif opt.mode == 3:
         print('Start testing Sigma=15...')
-        test_Denoise(net, denoise_set, sigma=15)
+        # test_Denoise(net, denoise_set, sigma=15)
 
         print('Start testing Sigma=25...')
-        test_Denoise(net, denoise_set, sigma=25)
+        # test_Denoise(net, denoise_set, sigma=25)
 
         print('Start testing Sigma=50...')
-        test_Denoise(net, denoise_set, sigma=50)
+        # test_Denoise(net, denoise_set, sigma=50)
 
         print('Start testing rain streak removal...')
         test_Derain_Dehaze(net, derain_set, task="derain")

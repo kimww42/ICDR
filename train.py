@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from utils.dataset_utils import TrainDataset
+from utils.dataset_utils_CDD import TrainDataset
 from net.model import AirNet
 
 from option import options as opt
@@ -19,10 +19,14 @@ if __name__ == '__main__':
     trainloader = DataLoader(trainset, batch_size=opt.batch_size, pin_memory=True, shuffle=True,
                              drop_last=True, num_workers=opt.num_workers)
 
+    save_epoch = 0
+
     # Network Construction
     net = AirNet(opt).cuda()
     net.train()
-
+    if opt.ckpt != "none" :
+        net.load_state_dict(torch.load(opt.ckpt))
+        save_epoch = int(opt.ckpt.split('_')[1][:-4])
     # Optimizer and Loss
     optimizer = optim.Adam(net.parameters(), lr=opt.lr)
     CE = nn.CrossEntropyLoss().cuda()
@@ -31,6 +35,7 @@ if __name__ == '__main__':
     # Start training
     print('Start training...')
     for epoch in range(opt.epochs):
+        epoch += save_epoch
         for ([clean_name, de_id], degrad_patch_1, degrad_patch_2, clean_patch_1, clean_patch_2) in tqdm(trainloader):
             degrad_patch_1, degrad_patch_2 = degrad_patch_1.cuda(), degrad_patch_2.cuda()
             clean_patch_1, clean_patch_2 = clean_patch_1.cuda(), clean_patch_2.cuda()
@@ -63,7 +68,7 @@ if __name__ == '__main__':
                 ), '\r', end='')
 
         GPUS = 1
-        if (epoch + 1) % 50 == 0:
+        if (epoch + 1) % 15 == 0:
             checkpoint = {
                 "net": net.state_dict(),
                 'optimizer': optimizer.state_dict(),

@@ -20,6 +20,7 @@ class TrainDataset(Dataset):
         self.D = Degradation(args)
         self.de_temp = 0
         self.de_type = self.args.de_type
+        self.image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif']
 
         self.de_dict = {'denoise_15': 0, 'denoise_25': 1, 'denoise_50': 2, 'derain': 3, 'dehaze': 4}
 
@@ -44,7 +45,10 @@ class TrainDataset(Dataset):
 
     def _init_clean_ids(self):
         clean_ids = []
+        # 파일 목록 중 이미지 파일만 필터링
         name_list = os.listdir(self.args.denoise_dir)
+        name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
+
         clean_ids += [self.args.denoise_dir + id_ for id_ in name_list]
 
         if 'denoise_15' in self.de_type:
@@ -60,20 +64,32 @@ class TrainDataset(Dataset):
             random.shuffle(self.s50_ids)
             self.s50_counter = 0
 
+        # print(clean_ids)
+
         self.num_clean = len(clean_ids)
 
     def _init_hazy_ids(self):
-        hazy = self.args.data_file_dir + "hazy/hazy_outside.txt"
-        self.hazy_ids += [self.args.dehaze_dir + id_.strip() for id_ in open(hazy)]
+        # 파일 목록 중 이미지 파일만 필터링
+        dehaze_ids = []
+        name_list = os.listdir(self.args.dehaze_dir)
+        name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
+        dehaze_ids += [self.args.dehaze_dir + id_ for id_ in name_list]
+        self.hazy_ids = dehaze_ids
 
         self.hazy_counter = 0
         self.num_hazy = len(self.hazy_ids)
 
     def _init_rs_ids(self):
-        rs = self.args.data_file_dir + "rainy/rainTrain.txt"
-        self.rs_ids += [self.args.derain_dir + id_.strip() for id_ in open(rs)]
+        # 파일 목록 중 이미지 파일만 필터링
+        derain_ids = []
+        name_list = os.listdir(self.args.derain_dir)
+        name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
+        derain_ids += [self.args.derain_dir + id_ for id_ in name_list]
+        self.rs_ids = derain_ids
 
         self.rl_counter = 0
+        # print(derain_ids)
+
         self.num_rl = len(self.rs_ids)
 
     def _crop_patch(self, img_1, img_2):
@@ -88,15 +104,12 @@ class TrainDataset(Dataset):
         return patch_1, patch_2
 
     def _get_gt_name(self, rainy_name):
-        gt_name = rainy_name.split("rainy")[0] + 'gt/norain-' + rainy_name.split('rain-')[-1]
+        gt_name = 'data/' + 'Target/Derain/norain-' + rainy_name.split('rain-')[-1]
         return gt_name
 
     def _get_nonhazy_name(self, hazy_name):
-        dir_name = hazy_name.split("synthetic")[0] + 'original/'
-        name = hazy_name.split('/')[-1].split('_')[0]
-        suffix = '.' + hazy_name.split('.')[-1]
-        nonhazy_name = dir_name + name + suffix
-        return nonhazy_name
+        gt_name = 'data/' + 'Target/Dehaze/nohaze-' + rainy_name.split('haze-')[-1]
+        return gt_name
 
     def __getitem__(self, _):
         de_id = self.de_dict[self.de_type[self.de_temp]]
@@ -171,13 +184,17 @@ class DenoiseTestDataset(Dataset):
         self.args = args
         self.clean_ids = []
         self.sigma = 15
+        self.image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif']
 
         self._init_clean_ids()
 
         self.toTensor = ToTensor()
 
     def _init_clean_ids(self):
+        clean_ids = []
+        # 파일 목록 중 이미지 파일만 필터링
         name_list = os.listdir(self.args.denoise_path)
+        name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
         self.clean_ids += [self.args.denoise_path + id_ for id_ in name_list]
 
         self.num_clean = len(self.clean_ids)
@@ -209,6 +226,7 @@ class DerainDehazeDataset(Dataset):
         self.ids = []
         self.task_idx = 0
         self.args = args
+        self.image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif']
 
         self.task_dict = {'derain': 0, 'dehaze': 1}
         self.toTensor = ToTensor()
@@ -218,18 +236,23 @@ class DerainDehazeDataset(Dataset):
     def _init_input_ids(self):
         if self.task_idx == 0:
             self.ids = []
+            # 파일 목록 중 이미지 파일만 필터링
             name_list = os.listdir(self.args.derain_path + 'input/')
+            name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
             self.ids += [self.args.derain_path + 'input/' + id_ for id_ in name_list]
         elif self.task_idx == 1:
             self.ids = []
+            # 파일 목록 중 이미지 파일만 필터링
             name_list = os.listdir(self.args.dehaze_path + 'input/')
+            name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
             self.ids += [self.args.dehaze_path + 'input/' + id_ for id_ in name_list]
 
         self.length = len(self.ids)
 
     def _get_gt_path(self, degraded_name):
         if self.task_idx == 0:
-            gt_name = degraded_name.replace("input", "target")
+            gt_name = '/'.join(degraded_name.replace("input", "target").split('/')[:-1] + degraded_name.replace("input", "target").replace("rain", "norain").split('/')[-1:])
+            print(gt_name)
         elif self.task_idx == 1:
             dir_name = degraded_name.split("input")[0] + 'target/'
             name = degraded_name.split('/')[-1].split('_')[0] + '.png'
@@ -266,7 +289,10 @@ class TestSpecificDataset(Dataset):
         self.toTensor = ToTensor()
 
     def _init_clean_ids(self, root):
+        degraded_ids = []
+        # 파일 목록 중 이미지 파일만 필터링
         name_list = os.listdir(root)
+        name_list = [file for file in name_list if os.path.splitext(file)[1].lower() in self.image_extensions]
         self.degraded_ids += [root + id_ for id_ in name_list]
 
         self.num_img = len(self.degraded_ids)
