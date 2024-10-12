@@ -48,7 +48,7 @@ def test_Derain_Dehaze(net, dataset, task="derain"):
     ssim = AverageMeter()
 
     with torch.no_grad():
-        for ([degraded_name], degradation, degrad_patch, clean_patch) in tqdm(testloader):
+        for ([degraded_name], degradation, degrad_patch, clean_patch, tmp) in tqdm(testloader):
             degrad_patch, clean_patch = degrad_patch.cuda(), clean_patch.cuda()
             print(f"Clean patch size: {clean_patch.size()}, Restored size: {degrad_patch.size()}")
             restored = net(x_query=degrad_patch, x_key=degrad_patch)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         ckpt_path = opt.ckpt_path + 'Denoise.pth'
     elif opt.mode == 1:
         opt.batch_size = 8
-        ckpt_path = opt.ckpt_path + 'Denoise/epoch_165.pth'
+        ckpt_path = opt.ckpt_path + 'Denoise/epoch_270.pth'
     elif opt.mode == 2:
         opt.batch_size = 1
         ckpt_path = opt.ckpt_path + 'Dehaze.pth'

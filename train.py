@@ -36,9 +36,10 @@ if __name__ == '__main__':
     print('Start training...')
     for epoch in range(opt.epochs):
         epoch += save_epoch
-        for ([clean_name, de_id], degrad_patch_1, degrad_patch_2, clean_patch_1, clean_patch_2) in tqdm(trainloader):
+        for ([clean_name, de_id], degrad_patch_1, degrad_patch_2, clean_patch_1, clean_patch_2, tmp) in tqdm(trainloader):
             degrad_patch_1, degrad_patch_2 = degrad_patch_1.cuda(), degrad_patch_2.cuda()
             clean_patch_1, clean_patch_2 = clean_patch_1.cuda(), clean_patch_2.cuda()
+            # text_prompt = text_prompt.cuda()
 
             optimizer.zero_grad()
 
