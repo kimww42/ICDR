@@ -68,6 +68,8 @@ class SFT_layer(nn.Module):
         )
 
         self.text_proj_head = TextProjectionHead(text_embed_dim, channels_out)
+
+        '''
         self.text_gamma = nn.Sequential(
             nn.Conv2d(channels_out, channels_out, 1, 1, 0, bias=False),
             nn.LeakyReLU(0.1, True),
@@ -78,6 +80,9 @@ class SFT_layer(nn.Module):
             nn.LeakyReLU(0.1, True),
             nn.Conv2d(channels_out, channels_out, 1, 1, 0, bias=False),
         ).float()
+        '''
+
+        self.cross_attention = nn.MultiheadAttention(embed_dim=channels_out, num_heads=2)
 
 
     def forward(self, x, inter, text_prompt):
@@ -85,21 +90,51 @@ class SFT_layer(nn.Module):
         :param x: degradation representation: B * C
         :param inter: degradation intermediate representation map: B * C * H * W
         '''
-        img_gamma = self.conv_gamma(inter)
-        img_beta = self.conv_beta(inter)
+        # img_gamma = self.conv_gamma(inter)
+        # img_beta = self.conv_beta(inter)
+
+        B, C, H, W = inter.shape #cross attention
+        
 
         text_tokens = clip.tokenize(text_prompt).to(x.device)  # Tokenize the text prompts (Batch size)
         with torch.no_grad():
             text_embed = clip_model.encode_text(text_tokens)
-        
+
         text_proj = self.text_proj_head(text_embed).float()
 
+        # 텍스트 임베딩 차원 확장: (B, C, H, W)로 변경 #concat 
+        # text_proj_expanded = text_proj.unsqueeze(-1).unsqueeze(-1).expand(B, self.conv_gamma[0].out_channels, H, W)
+        text_proj_expanded = text_proj.unsqueeze(-1).unsqueeze(-1).expand(B, C, H, W)
+        
+        # 이미지 중간 표현과 텍스트 임베딩 결합 (concat)
+        combined = inter * text_proj_expanded
+        # combined = torch.cat([inter, text_proj_expanded], dim=1)
+
+        # 이미지와 텍스트 기반 gamma와 beta 계산
+        img_gamma = self.conv_gamma(combined)
+        img_beta = self.conv_beta(combined)
+        
+        ''' simple concat
         text_gamma = self.text_gamma(text_proj.unsqueeze(-1).unsqueeze(-1))  # Reshape to match (B, C, H, W)
         text_beta = self.text_beta(text_proj.unsqueeze(-1).unsqueeze(-1))  # Reshape to match (B, C, H, W)
+        '''
 
+        '''
+        text_proj = text_proj.unsqueeze(1).expand(-1, H*W, -1)  # B * (H*W) * C
 
+        # 이미지 중간 표현 변환: B * (H*W) * C로 변경
+        inter_flat = inter.view(B, C, -1).permute(2, 0, 1)  # (H*W) * B * C
+        
+        # Cross-attention 적용
+        attn_output, _ = self.cross_attention(text_proj.permute(1, 0, 2), inter_flat, inter_flat)
+        attn_output = attn_output.permute(1, 2, 0).view(B, C, H, W)  # B * C * H * W
+
+        # Gamma와 Beta 계산
+        img_gamma = self.conv_gamma(attn_output)
+        img_beta = self.conv_beta(attn_output)
+'''
         # concat으로 text 결합 실험
-        return x * (img_gamma+text_gamma) + (img_beta+text_beta)
+        return x * img_gamma + img_beta
 
 
 class DGB(nn.Module):

@@ -31,6 +31,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(net.parameters(), lr=opt.lr)
     CE = nn.CrossEntropyLoss().cuda()
     l1 = nn.L1Loss().cuda()
+    min_loss = 1e9
 
     # Start training
     print('Start training...')
@@ -51,7 +52,7 @@ if __name__ == '__main__':
                 restored, output, target = net(x_query=degrad_patch_1, x_key=degrad_patch_2, text_prompt=text_prompt)
                 contrast_loss = CE(output, target)
                 l1_loss = l1(restored, clean_patch_1)
-                loss = l1_loss + 0.1 * contrast_loss
+                loss = l1_loss + 0.1 * contrast_loss / opt.batch_size
 
             # backward
             loss.backward()
@@ -69,12 +70,14 @@ if __name__ == '__main__':
                 ), '\r', end='')
 
         GPUS = 1
-        if (epoch + 1) % 15 == 0:
+        if (min_loss > loss or epoch % 20 == 0) and epoch > 98:
             checkpoint = {
                 "net": net.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 "epoch": epoch
             }
+            if epoch > 100:
+                min_loss = loss
             if GPUS == 1:
                 torch.save(net.state_dict(), opt.ckpt_path + 'epoch_' + str(epoch + 1) + '.pth')
             else:

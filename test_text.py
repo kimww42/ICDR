@@ -56,7 +56,7 @@ def test_Derain_Dehaze(net, dataset, task="derain"):
             psnr.update(temp_psnr, N)
             ssim.update(temp_ssim, N)
 
-            save_image_tensor(restored, output_path + degradation[0] + degraded_name[0] + '.png')
+            save_image_tensor(restored, output_path + text_prompt[0] + degraded_name[0] + '.png')
 
         print("PSNR: %.2f, SSIM: %.4f" % (psnr.avg, ssim.avg))
 
@@ -69,9 +69,9 @@ if __name__ == '__main__':
                         help='0 for denoise, 1 for derain, 2 for dehaze, 3 for all-in-one')
 
     parser.add_argument('--denoise_path', type=str, default="test/denoise/", help='save path of test noisy images')
-    parser.add_argument('--derain_path', type=str, default="data/CDD-11_test_100/", help='save path of test raining images')
+    parser.add_argument('--derain_path', type=str, default="data/Test_prompting/", help='save path of test raining images')
     parser.add_argument('--dehaze_path', type=str, default="test/dehaze/", help='save path of test hazy images')
-    parser.add_argument('--output_path', type=str, default="output/", help='output save path')
+    parser.add_argument('--output_path', type=str, default="output/demo11", help='output save path')
     parser.add_argument('--ckpt_path', type=str, default="ckpt/", help='checkpoint save path')
     opt = parser.parse_args()
 
@@ -83,8 +83,8 @@ if __name__ == '__main__':
         opt.batch_size = 3
         ckpt_path = opt.ckpt_path + 'Denoise.pth'
     elif opt.mode == 1:
-        opt.batch_size = 8
-        ckpt_path = opt.ckpt_path + 'Denoise/epoch_465.pth'
+        opt.batch_size = 7
+        ckpt_path = opt.ckpt_path + 'Denoise/epoch_287.pth'
     elif opt.mode == 2:
         opt.batch_size = 1
         ckpt_path = opt.ckpt_path + 'Dehaze.pth'

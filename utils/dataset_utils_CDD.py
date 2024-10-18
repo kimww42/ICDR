@@ -3,12 +3,26 @@ import random
 import copy
 from PIL import Image
 import numpy as np
+import json
 
 from torch.utils.data import Dataset
 from torchvision.transforms import ToPILImage, Compose, RandomCrop, ToTensor
 
 from utils.image_utils import random_augmentation, crop_img
 from utils.degradation_utils import Degradation
+
+# JSON 파일에서 불러오기
+with open('prompts.json', 'r') as json_file:
+    prompts = json.load(json_file)
+
+# 불러온 데이터에서 각 프롬프트 리스트 가져오기
+haze_text = prompts["haze_text"]
+rain_text = prompts["rain_text"]
+low_text = prompts["low_text"]
+low_rain_text = prompts["low_rain_text"]
+haze_low_text = prompts["low_haze_text"]
+haze_rain_text = prompts["haze_rain_text"]
+low_haze_rain_text = prompts["low_haze_rain_text"]
 
 
 class TrainDataset(Dataset):
@@ -76,6 +90,8 @@ class TrainDataset(Dataset):
         self.rain_ids = derain_ids
         self.rain_counter = 0
         self.num_rain = len(self.rain_ids)
+
+        # print(self.rain_ids)
 
     # low
     def _init_low_ids(self):
@@ -174,17 +190,22 @@ class TrainDataset(Dataset):
             self.haze_counter = (self.haze_counter + 1) % self.num_haze
             if self.haze_counter == 0:
                 random.shuffle(self.hazy_ids)
-            text_prompt = "Do Dehaze."
+            text_prompt = haze_text[random.randrange(0,len(haze_text))]
+            # text_prompt = "Dehaze"
+            # print(self.haze_counter)
 
         elif self.de_temp == 1:
             degrad_img = crop_img(np.array(Image.open(self.rain_ids[self.rain_counter]).convert('RGB')), base=16)
             clean_name = self._get_gt_name(self.rain_ids[self.rain_counter])
             clean_img = crop_img(np.array(Image.open(clean_name).convert('RGB')), base=16)
-
+            # print(f'before{self.rain_counter}')
             self.rain_counter = (self.rain_counter + 1) % self.num_rain
+            # print(f'after{self.rain_counter}')
             if self.rain_counter == 0:
                 random.shuffle(self.rain_ids)
-            text_prompt = "Do Derain."
+            text_prompt = rain_text[random.randrange(0,len(rain_text))]
+            # text_prompt = "Derain"
+            # print(self.rain_counter)
 
         elif self.de_temp == 2:
             degrad_img = crop_img(np.array(Image.open(self.low_ids[self.low_counter]).convert('RGB')), base=16)
@@ -194,7 +215,8 @@ class TrainDataset(Dataset):
             self.low_counter = (self.low_counter + 1) % self.num_low
             if self.low_counter == 0:
                 random.shuffle(self.low_ids)
-            text_prompt = "Do Brighter."
+            text_prompt = low_text[random.randrange(0,len(low_text))]
+             # text_prompt = "Brighter"
 
         elif self.de_temp == 3:
             degrad_img = crop_img(np.array(Image.open(self.hazy_rain_ids[self.hr_counter]).convert('RGB')), base=16)
@@ -204,7 +226,8 @@ class TrainDataset(Dataset):
             self.hr_counter = (self.hr_counter + 1) % self.num_hr
             if self.hr_counter == 0:
                 random.shuffle(self.hazy_rain_ids)
-            text_prompt = "Do Derain and Dehaze."
+            text_prompt = haze_rain_text[random.randrange(0,len(haze_rain_text))]
+            # text_prompt = "Dehaze, Derain"
 
         elif self.de_temp == 4:
             degrad_img = crop_img(np.array(Image.open(self.low_rain_ids[self.lr_counter]).convert('RGB')), base=16)
@@ -214,7 +237,8 @@ class TrainDataset(Dataset):
             self.lr_counter = (self.lr_counter + 1) % self.num_lr
             if self.lr_counter == 0:
                 random.shuffle(self.low_rain_ids)
-            text_prompt = "Do Brighter and Derain."
+            text_prompt = low_rain_text[random.randrange(0,len(low_rain_text))]
+            # text_prompt = "Derain, Brighter"
 
         elif self.de_temp == 5:
             degrad_img = crop_img(np.array(Image.open(self.low_haze_ids[self.lh_counter]).convert('RGB')), base=16)
@@ -224,7 +248,8 @@ class TrainDataset(Dataset):
             self.lh_counter = (self.lh_counter + 1) % self.num_lh
             if self.lh_counter == 0:
                 random.shuffle(self.low_haze_ids)
-            text_prompt = "Do Brighter and Dehaze."
+            text_prompt = haze_low_text[random.randrange(0,len(haze_low_text))]
+            # text_prompt = "Dehaze, Brighter"
 
         elif self.de_temp == 6:
             degrad_img = crop_img(np.array(Image.open(self.low_haze_rain_ids[self.lhr_counter]).convert('RGB')), base=16)
@@ -234,7 +259,8 @@ class TrainDataset(Dataset):
             self.lhr_counter = (self.lhr_counter + 1) % self.num_lhr
             if self.lhr_counter == 0:
                 random.shuffle(self.low_haze_rain_ids)
-            text_prompt = "Do Brighter and Dehaze and Derain."
+            text_prompt = low_haze_rain_text[random.randrange(0,len(low_haze_rain_text))]
+            # text_prompt = "Dehaze, Derain, Brighter"
 
         degrad_patch_1, clean_patch_1 = random_augmentation(*self._crop_patch(degrad_img, clean_img))
         degrad_patch_2, clean_patch_2 = random_augmentation(*self._crop_patch(degrad_img, clean_img))
@@ -243,8 +269,6 @@ class TrainDataset(Dataset):
         degrad_patch_1, degrad_patch_2 = self.toTensor(degrad_patch_1), self.toTensor(degrad_patch_2)
 
         self.de_temp = (self.de_temp + 1) % 7
-        if self.de_temp == 0:
-            random.shuffle(self.de_type)
 
         return [clean_name, 0], degrad_patch_1, degrad_patch_2, clean_patch_1, clean_patch_2, text_prompt
 
@@ -276,7 +300,8 @@ class DerainDehazeDataset(Dataset):
         self.length = len(self.ids)
 
     def _get_gt_path(self, degraded_name):
-        gt_name = degraded_name.split('/')[0] + '/' + degraded_name.split('/')[1] + '/clear/' + degraded_name.split('/')[-1]
+        # gt_name = degraded_name.split('/')[0] + '/' + degraded_name.split('/')[1] + '/clear/' + degraded_name.split('/')[-1]
+        gt_name = './data/CDD-11_test_100/clear/' + degraded_name.split('/')[-1]
         return gt_name
 
     def set_dataset(self, task):
@@ -286,31 +311,32 @@ class DerainDehazeDataset(Dataset):
     def __getitem__(self, idx):
         degraded_path = self.ids[idx]
         clean_path = self._get_gt_path(degraded_path)
-        degradation = degraded_path.split('/')[2]
+        degradation = "low"
 
-        text_prompt = ""
-
+        text_prompt = "I have to post an emotional shot on Instagram, but it was shot too foggy and too dark. Change it like a sunny day and brighten it up!"
+        '''
         if degradation == "haze":
-            text_prompt = "Do Dehaze"
+            text_prompt = "Eliminate the haze for better visibility."
 
         elif degradation == "rain":
-            text_prompt = "Do Derain."
+            text_prompt = "Remove the raindrops and make the image clearer."
 
         elif degradation == "low":
-            text_prompt = "Do Brighter."
+            text_prompt = "Enhance visibility in the low-light parts of the image."
 
         elif degradation == "haze_rain":
-            text_prompt = "Do Derain and Dehaze."
+            text_prompt = "Remove the fog and rain to improve the clarity of the image."
 
         elif degradation == "low_rain":
-            text_prompt = "Do Brighter and Derain."
+            text_prompt = "Remove both rain and low-light effects to improve the image quality."
 
         elif degradation == "low_haze":
-            text_prompt = "Do Brighter and Dehaze."
+            text_prompt = "Clear the fog and lighten up the dim regions for better clarity."
 
         elif degradation == "low_haze_rain":
-            text_prompt = "Do Brighter and Dehaze and Derain."
-            
+            text_prompt = "Clear the rain, fog, and brighten the image for improved visibility."
+        '''
+
         degraded_img = crop_img(np.array(Image.open(degraded_path).convert('RGB')), base=16)
         clean_img = crop_img(np.array(Image.open(clean_path).convert('RGB')), base=16)
 
