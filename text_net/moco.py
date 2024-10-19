@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class MoCo(nn.Module):
     """
@@ -73,7 +74,7 @@ class MoCo(nn.Module):
         num_gpus = batch_size_all // batch_size_this
 
         # random shuffle index
-        idx_shuffle = torch.randperm(batch_size_all).cuda()
+        idx_shuffle = torch.randperm(batch_size_all).to(device)
 
         # broadcast to all gpus
         torch.distributed.broadcast(idx_shuffle, src=0)
@@ -140,7 +141,7 @@ class MoCo(nn.Module):
             logits /= self.T
 
             # labels: positive key indicators
-            labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+            labels = torch.zeros(logits.shape[0], dtype=torch.long).to(device)
             # dequeue and enqueue
             self._dequeue_and_enqueue(k)
 

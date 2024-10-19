@@ -12,6 +12,8 @@ from utils.image_io import save_image_tensor
 
 from text_net.model import AirNet
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def test_Derain_Dehaze(opt, net, dataset, task="derain"):
     output_path = opt.output_path + task + '/'
     subprocess.check_output(['mkdir', '-p', output_path])
@@ -22,7 +24,7 @@ def test_Derain_Dehaze(opt, net, dataset, task="derain"):
 
     with torch.no_grad():
         for ([degraded_name], degradation, degrad_patch, clean_patch, text_prompt) in tqdm(testloader):
-            degrad_patch, clean_patch = degrad_patch.cuda(), clean_patch.cuda()
+            degrad_patch, clean_patch = degrad_patch.to(device), clean_patch.to(device)
             restored = net(x_query=degrad_patch, x_key=degrad_patch, text_prompt = text_prompt)
 
         return save_image_tensor(restored)
@@ -42,7 +44,6 @@ def infer(text_prompt = "", img=None):
 
     np.random.seed(0)
     torch.manual_seed(0)
-    torch.cuda.set_device(opt.cuda)
 
     opt.batch_size = 7
     ckpt_path = opt.ckpt_path
@@ -50,9 +51,9 @@ def infer(text_prompt = "", img=None):
     derain_set = DerainDehazeDataset(opt, img=img, text_prompt = text_prompt)
 
     # Make network
-    net = AirNet(opt).cuda()
+    net = AirNet(opt).to(device)
     net.eval()
-    net.load_state_dict(torch.load(ckpt_path, map_location=torch.device(opt.cuda)))
+    net.load_state_dict(torch.load(ckpt_path, map_location=device))
 
     restored = test_Derain_Dehaze(opt, net, derain_set, task="derain")
 

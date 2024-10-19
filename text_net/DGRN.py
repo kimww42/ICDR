@@ -3,7 +3,8 @@ import torch
 from .deform_conv import DCN_layer
 import clip
 
-clip_model, preprocess = clip.load("ViT-B/32", device='cuda')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+clip_model, preprocess = clip.load("ViT-B/32", device=device)
 
 # 동적으로 텍스트 임베딩 차원 가져오기
 text_embed_dim = clip_model.text_projection.shape[1]
@@ -96,7 +97,7 @@ class SFT_layer(nn.Module):
         B, C, H, W = inter.shape #cross attention
         
 
-        text_tokens = clip.tokenize(text_prompt).to(x.device)  # Tokenize the text prompts (Batch size)
+        text_tokens = clip.tokenize(text_prompt).to(device)  # Tokenize the text prompts (Batch size)
         with torch.no_grad():
             text_embed = clip_model.encode_text(text_tokens)
 
