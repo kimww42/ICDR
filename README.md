@@ -1,60 +1,50 @@
-# All-In-One Image Restoration for Unknown Corruption (AirNet) ![](https://visitor-badge.glitch.me/badge?page_id=XLearning-SCU.2022-CVPR-AirNet)
+# <p align=center>ICDR: Image Restoration Framework for Composite Degradation following Human Instructions</p>
 
-PyTorch implementation for All-In-One Image Restoration for Unknown Corruption (AirNet) (CVPR 2022). [[paper](http://pengxi.me/wp-content/uploads/2022/03/All-In-One-Image-Restoration-for-Unknown-Corruption.pdf)]
 
+<div align="center">
+ 
+[![Hugging Face Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue)](https://huggingface.co/spaces/Siwon123/ICDR)
+
+</div>
+
+---
 ## Dependencies
 
-* Python == 3.8.11
-* Pytorch == 1.7.0 
-* mmcv-full == 1.3.11 
+* Python == 3.10
+* Pytorch == 2.4.0
+* mmcv-full == 2.2.0
 
-We also export our conda virtual environment as airnet.yaml. You can use the following command to create the environment.
-
-```bash
-conda env create -f airnet.yaml
-```
+requirements.txt allows you to install the environment required to execute the project. If this is not possible, please contact "kimsiw42@ajou.ac.kr"
 
 ## Dataset
 
-You could find the dataset we used in the paper at following:
+You could find the dataset we used in the project at following:
 
-Denoising: [BSD400](https://drive.google.com/file/d/1idKFDkAHJGAFDn1OyXZxsTbOSBx9GS8N/view?usp=sharing), [WED](http://ivc.uwaterloo.ca/database/WaterlooExploration/exploration_database_and_code.rar), [Urban100](https://drive.google.com/drive/folders/1B3DJGQKB6eNdwuQIhdskA64qUuVKLZ9u)
-
-Deraining: [Train100L&Rain100L](https://drive.google.com/drive/folders/1-_Tw-LHJF4vh8fpogKgZx1EQ9MhsJI_f?usp=sharing)
-
-Dehazing: [RESIDE](https://sites.google.com/view/reside-dehaze-datasets/reside-v0) (OTS)
+CDD-11: https://github.com/gy65896/OneRestore/tree/main?tab=readme-ov-file
 
 ## Demo
 
-You could download the pre-trained model from [Google Drive](https://drive.google.com/drive/folders/1DS_iJsP5Epzz78fZRz8lEINcnhBF6Uws?usp=sharing) and [Baidu Netdisk](https://pan.baidu.com/s/1usrpGA8FIyj1ogsZQE_Emg) (password: cr7d). Remember to put the pre-trained model into ckpt/
+You could download the pre-trained model from [Google Drive](https://drive.google.com/file/d/13jCADhncLHCtEt0Ad8lsBskHo67-hxtO/view?usp=sharing) Remember to put the pre-trained model into ckpt/
 
-If you only need the visual results, you could put the test images into test/demo/ and use the following command to restore the test image:
+Support demo using gradio. You can run demo in huggingface space.
+[![Hugging Face Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue)](https://huggingface.co/spaces/Siwon123/ICDR)
+
+
+However, in huggingface space, it can take a long time to operate in cpu environment. (30 minutes per sheet)
+
+In this case, you can run app.py directly to test demo in a local environment.
 
 ```bash
-python demo.py --mode 3
+python app.py
 ```
-
-where mode == 3 means we use the checkpoint trained on all-in-one setting. (0 for denoising, 1 for deraining and 2 for dehazing)
 
 ## Training
 
-If you want to re-train our model, you need to first put the training set into the data/, and use the following command:
+If you want to train our model, you need to first put the Dataset to in data/CDD-11_test_100 and data/CDD-11_train_100
 
 ```bash
-python train.py
+python train_text.py
 ```
-
-ps. To train with different combinations of corruptions, you could modify the "de_type" in option.py.
-
-## Testing
-
-If you want to test our model and get the psnr and ssim, you need to put the testing set into the test/, where several examples are given. Then, you could use the following command:
-
-```bash
-python test.py --mode 3
-```
-
-where mode == 3 means we use the checkpoint trained on all-in-one setting. (0 for denoising, 1 for deraining and 2 for dehazing)
 
 ## Citation
 
@@ -62,16 +52,16 @@ If you find AirNet useful in your research, please consider citing:
 
 ```
 @inproceedings{AirNet,
-author = {Li, Boyun and Liu, Xiao and Hu, Peng and Wu, Zhongqin and Lv, Jiancheng and Peng, Xi},
-title = {{All-In-One Image Restoration for Unknown Corruption}},
-booktitle = {IEEE Conference on Computer Vision and Pattern Recognition},
-year = {2022},
-address = {New Orleans, LA},
-month = jun
+author = 
+title = 
+booktitle = 
+year = 
+address = 
+month = 
 }
 ```
 
 ## Acknowledgement
 
-This repo is built upon the framework of [DASR](https://github.com/The-Learning-And-Vision-Atelier-LAVA/DASR), and we borrow some code from [mmcv](https://github.com/open-mmlab/mmcv), thanks for their excellent work!
+This repo is built upon the framework of [AIRNET](https://github.com/XLearning-SCU/2022-CVPR-AirNet), thanks for their excellent work!
 
