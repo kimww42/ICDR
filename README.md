@@ -12,7 +12,7 @@
 
 * Python == 3.10
 * Pytorch == 2.4.0
-* mmcv-full == 2.2.0
+* mmcv == 2.2.0
 
 requirements.txt allows you to install the environment required to execute the project. If this is not possible, please contact "kimsiw42@ajou.ac.kr"
 
