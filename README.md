@@ -48,10 +48,10 @@ python train_text.py
 
 ## Citation
 
-If you find AirNet useful in your research, please consider citing:
+If you find ICDR useful in your research, please consider citing:
 
 ```
-@inproceedings{AirNet,
+@inproceedings{ICDR,
 author = 
 title = 
 booktitle = 
