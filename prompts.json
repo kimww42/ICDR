@@ -297,6 +297,9 @@
         "Improve the clarity of the shadows by increasing brightness.",
         "Light up the dark parts of the image to reveal more details."
     ],
+    "snow_text": [
+        "Please remove the snow from the image."
+    ],
     "haze_rain_text": [
         "Please remove the haze and rain from the image.",
         "Eliminate both rain and fog to enhance the image clarity.",
@@ -390,6 +393,9 @@
         "Clear both fog and rain for improved image clarity.",
         "Remove both rain and haze to make the image clearer.",
         "Get rid of the rain and fog for a better overall view."
+    ],
+    "haze_snow_text": [
+        "Please remove the haze and snow from the image."
     ],
     "low_rain_text": [
         "Remove the rain and brighten up the dark areas.",
@@ -485,6 +491,9 @@
         "Eliminate the rain and brighten the shadows for better sharpness.",
         "Remove both rain and shadows to make the scene clearer.",
         "Clear the rain and lighten the dark areas to enhance the image clarity."
+    ],
+    "low_snow_text": [
+        "Remove the snow and brighten up the dark areas.,"
     ],
     "low_haze_text": [
         "Remove the haze and brighten up the dark areas.",
@@ -662,5 +671,8 @@
         "Clear both rain and fog while brightening the shadows to reveal more details.",
         "Reduce the rain and haze, and brighten up the dark regions for better clarity.",
         "Clear the rain and fog, and brighten the dark areas for better visibility."
+    ],
+    "low_haze_snow_text": [
+        "Clear the snow and fog, and brighten the dark areas for better visibility."
     ]
 }
