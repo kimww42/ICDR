@@ -5,6 +5,7 @@
  
 [![Hugging Face Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Demo-blue)](https://huggingface.co/spaces/Siwon123/ICDR)
 
+![image](./main.png)
 </div>
 
 ---
